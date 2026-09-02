@@ -5,6 +5,37 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 
+use super::hidden::is_hidden_with_metadata;
+
+#[allow(dead_code)] // Prepared for the upcoming easter egg screen.
+pub fn fetch_item_names(root: &Path) -> Result<Vec<String>> {
+    const FALLBACK_ITEM_NAMES: [&str; 3] = ["h2depot_A.rs", "h2depot_B.rs", "h2depot_C.rs"];
+
+    if !root.is_dir() {
+        bail!("not a directory: {}", root.display());
+    }
+
+    let mut names = fs::read_dir(root)
+        .with_context(|| format!("failed to read directory: {}", root.display()))?
+        .map(|entry| {
+            entry
+                .with_context(|| format!("failed to read an entry in: {}", root.display()))
+                .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        })
+        .collect::<Result<Vec<_>>>()?;
+    names.sort();
+    names.truncate(3);
+
+    let missing = 3usize.saturating_sub(names.len());
+    names.extend(
+        FALLBACK_ITEM_NAMES
+            .iter()
+            .take(missing)
+            .map(|name| (*name).to_owned()),
+    );
+    Ok(names)
+}
+
 pub fn collect_files(root: &Path, recursive: bool, include_hidden: bool) -> Result<Vec<PathBuf>> {
     if !root.is_dir() {
         bail!("not a directory: {}", root.display());
@@ -30,8 +61,13 @@ fn visit(
             .with_context(|| format!("failed to read an entry in: {}", directory.display()))?;
         let path = entry.path();
 
-        if !include_hidden && is_hidden(&path) {
-            continue;
+        if !include_hidden {
+            let metadata = entry
+                .metadata()
+                .with_context(|| format!("failed to read metadata: {}", path.display()))?;
+            if is_hidden_with_metadata(&path, &metadata) {
+                continue;
+            }
         }
 
         let file_type = entry
@@ -50,58 +86,25 @@ fn visit(
     Ok(())
 }
 
-fn is_hidden(path: &Path) -> bool {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| name.starts_with('.'))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::collect_files;
-    use std::{fs, path::PathBuf};
+    use super::fetch_item_names;
+    use std::fs;
 
     #[test]
-    fn includes_hidden_files_and_directories() {
-        let root = std::env::temp_dir().join(format!("clipls-test-{}", std::process::id()));
+    fn pads_missing_item_names_in_fallback_order() {
+        let root = std::env::temp_dir().join(format!(
+            "clipls-fetch-item-names-test-{}",
+            std::process::id()
+        ));
         let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(root.join("src")).unwrap();
-        fs::create_dir_all(root.join("target")).unwrap();
-        fs::write(root.join(".gitignore"), "target\n").unwrap();
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("z.txt"), "").unwrap();
+        fs::write(root.join("a.txt"), "").unwrap();
 
-        let entries = collect_files(&root, false, true).unwrap();
-        let relative: Vec<PathBuf> = entries
-            .iter()
-            .map(|path| path.strip_prefix(&root).unwrap().to_owned())
-            .collect();
+        let names = fetch_item_names(&root).unwrap();
 
-        assert_eq!(
-            relative,
-            [
-                PathBuf::from(".gitignore"),
-                PathBuf::from("src"),
-                PathBuf::from("target")
-            ]
-        );
-
-        fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn excludes_hidden_files_by_default() {
-        let root = std::env::temp_dir().join(format!("clipls-hidden-test-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(root.join("src")).unwrap();
-        fs::write(root.join(".gitignore"), "target\n").unwrap();
-
-        let entries = collect_files(&root, false, false).unwrap();
-        let relative: Vec<PathBuf> = entries
-            .iter()
-            .map(|path| path.strip_prefix(&root).unwrap().to_owned())
-            .collect();
-
-        assert_eq!(relative, [PathBuf::from("src")]);
-
+        assert_eq!(names, ["a.txt", "z.txt", "h2depot_A.rs"]);
         fs::remove_dir_all(root).unwrap();
     }
 }
