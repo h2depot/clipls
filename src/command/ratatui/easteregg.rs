@@ -576,33 +576,32 @@ pub fn plot_easteregg() -> Result<()> {
                         break;
                     }
                     Event::Mouse(mouse) => {
-                        if let MouseEventKind::Down(MouseButton::Left) = mouse.kind {
-                            if mouse.column >= list_area.x
-                                && mouse.column < list_area.right()
-                                && mouse.row >= list_area.y
-                                && mouse.row < list_area.bottom()
-                            {
-                                let index = usize::from(mouse.row - list_area.y);
-                                if index < item_names.len() {
-                                    let was_all_packed = !item_names.is_empty()
-                                        && selected.len() == item_names.len();
-                                    if !selected.remove(&index) {
-                                        selected.insert(index);
-                                    }
-                                    let is_all_packed = !item_names.is_empty()
-                                        && selected.len() == item_names.len();
-                                    if is_all_packed != was_all_packed {
-                                        icon_phase = IconPhase::Transition {
-                                            to_pumpkin: is_all_packed,
-                                            started_at: Instant::now(),
-                                            reveal_time: if is_all_packed {
-                                                ICON_REVEAL_TIME
-                                            } else {
-                                                ICON_REVERSE_TIME
-                                            },
-                                            seed: random_seed.rotate_left(index as u32 % u64::BITS),
-                                        };
-                                    }
+                        if let MouseEventKind::Down(MouseButton::Left) = mouse.kind
+                            && mouse.column >= list_area.x
+                            && mouse.column < list_area.right()
+                            && mouse.row >= list_area.y
+                            && mouse.row < list_area.bottom()
+                        {
+                            let index = usize::from(mouse.row - list_area.y);
+                            if index < item_names.len() {
+                                let was_all_packed =
+                                    !item_names.is_empty() && selected.len() == item_names.len();
+                                if !selected.remove(&index) {
+                                    selected.insert(index);
+                                }
+                                let is_all_packed =
+                                    !item_names.is_empty() && selected.len() == item_names.len();
+                                if is_all_packed != was_all_packed {
+                                    icon_phase = IconPhase::Transition {
+                                        to_pumpkin: is_all_packed,
+                                        started_at: Instant::now(),
+                                        reveal_time: if is_all_packed {
+                                            ICON_REVEAL_TIME
+                                        } else {
+                                            ICON_REVERSE_TIME
+                                        },
+                                        seed: random_seed.rotate_left(index as u32 % u64::BITS),
+                                    };
                                 }
                             }
                         }

@@ -179,10 +179,8 @@ impl<'a> FilePicker<'a> {
     }
 
     fn toggle_selected(&mut self) {
-        if !self.items.is_empty() {
-            if !self.selected.remove(&self.cursor) {
-                self.selected.insert(self.cursor);
-            }
+        if !self.items.is_empty() && !self.selected.remove(&self.cursor) {
+            self.selected.insert(self.cursor);
         }
     }
 }

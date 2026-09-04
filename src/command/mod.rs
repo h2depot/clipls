@@ -1,4 +1,5 @@
-mod command;
+#[allow(clippy::module_inception)]
+pub mod command;
 pub mod ratatui;
 
 pub use command::{
