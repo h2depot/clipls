@@ -7,7 +7,6 @@ use anyhow::{Context, Result, bail};
 
 use super::hidden::is_hidden_with_metadata;
 
-#[allow(dead_code)] // Prepared for the upcoming easter egg screen.
 pub fn fetch_item_names(root: &Path) -> Result<Vec<String>> {
     const FALLBACK_ITEM_NAMES: [&str; 3] = ["h2depot_A.rs", "h2depot_B.rs", "h2depot_C.rs"];
 
