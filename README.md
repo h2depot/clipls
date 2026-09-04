@@ -1,4 +1,4 @@
-﻿# 📎clipls
+# 📎clipls
 ### Copy files on the Clipboard. The bridge of TUI and GUI.
 
 <p align="center">
@@ -32,6 +32,7 @@ If `PATH` is omitted, clipls opens the current directory. After starting, select
 | --- | --- |
 | `clipls` | Browse the current directory and copy the selected files to the clipboard. |
 | `clipls <PATH>` | Browse the specified directory instead of the current directory. |
+| `clipls --fc <FILES...>` | Directly copy specified files to the clipboard without launching the TUI (Fast Clip). |
 | `clipls -r <PATH>` / `clipls --recursive <PATH>` | Include files and directories inside subdirectories. |
 | `clipls -a <PATH>` / `clipls --all <PATH>` | Include hidden files and directories. |
 | `clipls -m file <PATH>` | Copy the selected files themselves to the clipboard (default mode). |
