@@ -90,6 +90,42 @@ const H2DEPOT: [&str; 6] = [
 ];
 
 const FRAME_TIME: Duration = Duration::from_millis(90);
+const ICON_FILL_TIME: Duration = Duration::from_millis(180);
+const ICON_REVEAL_TIME: Duration = Duration::from_millis(900);
+const ICON_REVERSE_TIME: Duration = Duration::from_millis(400);
+
+enum IconPhase {
+    Clipls,
+    Transition {
+        to_pumpkin: bool,
+        started_at: Instant,
+        reveal_time: Duration,
+        seed: u64,
+    },
+    Pumpkin,
+}
+
+impl IconPhase {
+    fn settle_if_finished(&mut self, now: Instant) {
+        let IconPhase::Transition {
+            to_pumpkin,
+            started_at,
+            reveal_time,
+            ..
+        } = self
+        else {
+            return;
+        };
+
+        if now.duration_since(*started_at) >= ICON_FILL_TIME + *reveal_time {
+            *self = if *to_pumpkin {
+                IconPhase::Pumpkin
+            } else {
+                IconPhase::Clipls
+            };
+        }
+    }
+}
 
 fn shade(character: u8) -> usize {
     b" .:-=+*#%@"
@@ -115,6 +151,53 @@ fn fit_row(row: &str, width: usize) -> String {
             char::from(character)
         })
         .collect()
+}
+
+fn transition_order(row: usize, column: usize, seed: u64) -> f64 {
+    let mut value = seed
+        ^ (row as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15)
+        ^ (column as u64).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    value ^= value >> 30;
+    value = value.wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    value ^= value >> 27;
+    value = value.wrapping_mul(0x94d0_49bb_1331_11eb);
+    value ^= value >> 31;
+    value as f64 / u64::MAX as f64
+}
+
+fn transitioning_icon_line(
+    target_row: &str,
+    width: usize,
+    row: usize,
+    elapsed: Duration,
+    reveal_time: Duration,
+    seed: u64,
+    target_style: Style,
+) -> Line<'static> {
+    let target = fit_row(target_row, width);
+    let progress = elapsed.saturating_sub(ICON_FILL_TIME).as_secs_f64() / reveal_time.as_secs_f64();
+    let progress = progress.clamp(0.0, 1.0);
+    let dissolve_edge = (progress + 0.08).min(1.0);
+    let white_style = Style::default()
+        .fg(Color::White)
+        .add_modifier(Modifier::BOLD);
+
+    Line::from(
+        target
+            .chars()
+            .enumerate()
+            .map(|(column, target_character)| {
+                let order = transition_order(row, column, seed);
+                if order <= progress {
+                    Span::styled(target_character.to_string(), target_style)
+                } else if order <= dissolve_edge && elapsed >= ICON_FILL_TIME {
+                    Span::styled(" ", white_style)
+                } else {
+                    Span::styled("@", white_style)
+                }
+            })
+            .collect::<Vec<_>>(),
+    )
 }
 
 fn fit_unicode_row(row: &str, width: usize) -> String {
@@ -250,6 +333,7 @@ pub fn plot_easteregg() -> Result<()> {
     let upper_slots = generate_cargo_slots(item_names.len(), random_seed);
     let lower_slots = generate_cargo_slots(item_names.len(), random_seed.rotate_left(29));
     let mut selected = BTreeSet::new();
+    let mut icon_phase = IconPhase::Clipls;
 
     stdout().execute(EnableMouseCapture)?;
     let mut terminal = ratatui::init();
@@ -258,6 +342,7 @@ pub fn plot_easteregg() -> Result<()> {
         let mut last_tick = Instant::now();
         let mut tick = 0usize;
         loop {
+            icon_phase.settle_if_finished(Instant::now());
             let mut list_area = Rect::default();
             let upper_cargo = build_cargo_pattern(&upper_slots, &item_names, &selected);
             let lower_cargo = build_cargo_pattern(&lower_slots, &item_names, &selected);
@@ -267,8 +352,8 @@ pub fn plot_easteregg() -> Result<()> {
                     Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
                         .areas(frame.area());
 
-                let is_all_packed = !item_names.is_empty() && selected.len() == item_names.len();
-                let (icon_data, icon_title, icon_style) = if is_all_packed {
+                let showing_pumpkin = matches!(icon_phase, IconPhase::Pumpkin);
+                let (icon_data, icon_title, icon_style) = if showing_pumpkin {
                     (
                         &PUMPKIN,
                         " PUMPKIN STATE ",
@@ -313,10 +398,38 @@ pub fn plot_easteregg() -> Result<()> {
                 let icon_image = (0..image_height)
                     .map(|row| {
                         let source_row = icon_data[row * icon_data.len() / image_height];
-                        Line::from(Span::styled(
-                            fit_row(source_row, usize::from(left_inner.width)),
-                            icon_style,
-                        ))
+                        if let IconPhase::Transition {
+                            to_pumpkin,
+                            started_at,
+                            reveal_time,
+                            seed,
+                        } = &icon_phase
+                        {
+                            let target_data = if *to_pumpkin { &PUMPKIN } else { &CLIPLS_ICON };
+                            let target_style = if *to_pumpkin {
+                                Style::default()
+                                    .fg(Color::Rgb(242, 139, 0))
+                                    .add_modifier(Modifier::BOLD)
+                            } else {
+                                Style::default()
+                                    .fg(Color::Cyan)
+                                    .add_modifier(Modifier::BOLD)
+                            };
+                            transitioning_icon_line(
+                                target_data[row * target_data.len() / image_height],
+                                usize::from(left_inner.width),
+                                row,
+                                Instant::now().duration_since(*started_at),
+                                *reveal_time,
+                                *seed,
+                                target_style,
+                            )
+                        } else {
+                            Line::from(Span::styled(
+                                fit_row(source_row, usize::from(left_inner.width)),
+                                icon_style,
+                            ))
+                        }
                     })
                     .collect::<Vec<_>>();
                 frame.render_widget(
@@ -471,8 +584,24 @@ pub fn plot_easteregg() -> Result<()> {
                             {
                                 let index = usize::from(mouse.row - list_area.y);
                                 if index < item_names.len() {
+                                    let was_all_packed = !item_names.is_empty()
+                                        && selected.len() == item_names.len();
                                     if !selected.remove(&index) {
                                         selected.insert(index);
+                                    }
+                                    let is_all_packed = !item_names.is_empty()
+                                        && selected.len() == item_names.len();
+                                    if is_all_packed != was_all_packed {
+                                        icon_phase = IconPhase::Transition {
+                                            to_pumpkin: is_all_packed,
+                                            started_at: Instant::now(),
+                                            reveal_time: if is_all_packed {
+                                                ICON_REVEAL_TIME
+                                            } else {
+                                                ICON_REVERSE_TIME
+                                            },
+                                            seed: random_seed.rotate_left(index as u32 % u64::BITS),
+                                        };
                                     }
                                 }
                             }
