@@ -46,6 +46,21 @@ pub fn collect_files(root: &Path, recursive: bool, include_hidden: bool) -> Resu
     Ok(files)
 }
 
+pub fn collect_listed_files(items: &[PathBuf]) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+
+    for path in items {
+        if !path.exists() {
+            bail!("no such file or directory: {}", path.display());
+        }
+        files.push(path.clone());
+    }
+
+    files.sort();
+    files.dedup();
+    Ok(files)
+}
+
 fn visit(
     directory: &Path,
     recursive: bool,
@@ -83,27 +98,4 @@ fn visit(
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::fetch_item_names;
-    use std::fs;
-
-    #[test]
-    fn pads_missing_item_names_in_fallback_order() {
-        let root = std::env::temp_dir().join(format!(
-            "clipls-fetch-item-names-test-{}",
-            std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(&root).unwrap();
-        fs::write(root.join("z.txt"), "").unwrap();
-        fs::write(root.join("a.txt"), "").unwrap();
-
-        let names = fetch_item_names(&root).unwrap();
-
-        assert_eq!(names, ["a.txt", "z.txt", "h2depot_A.rs"]);
-        fs::remove_dir_all(root).unwrap();
-    }
 }

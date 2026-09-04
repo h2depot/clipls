@@ -1,6 +1,4 @@
-use std::{fs, path::PathBuf};
-
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::{
     clipboard,
@@ -8,7 +6,7 @@ use crate::{
         Args, CopyMode,
         ratatui::{PickerItem, plot},
     },
-    file_ops::{collect_files, is_hidden},
+    file_ops::{collect_files, contents_as_text, is_hidden, paths_as_text},
 };
 
 pub fn run(args: Args) -> Result<()> {
@@ -53,23 +51,4 @@ pub fn run(args: Args) -> Result<()> {
 
     println!("Copied {} file(s) to the clipboard.", selected_files.len());
     Ok(())
-}
-
-fn paths_as_text(files: &[PathBuf]) -> String {
-    files
-        .iter()
-        .map(|file| file.display().to_string())
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn contents_as_text(files: &[PathBuf]) -> Result<String> {
-    files
-        .iter()
-        .map(|file| {
-            fs::read_to_string(file)
-                .with_context(|| format!("failed to read file as UTF-8: {}", file.display()))
-        })
-        .collect::<Result<Vec<_>>>()
-        .map(|contents| contents.join("\n"))
 }

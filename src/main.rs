@@ -1,9 +1,10 @@
 mod app;
 mod clipboard;
 mod command;
+mod fastclip;
 mod file_ops;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use clap::Parser;
 use command::{
     Args, aboutme_requested, easteregg_requested, ratatui::plot_aboutme, ratatui::plot_easteregg,
@@ -28,5 +29,13 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    app::run(Args::parse())
+    let args = Args::parse();
+
+    if let Some(fastclip_files) = args.fastclip {
+        fastclip::run(&fastclip_files, args.mode)?;
+    } else {
+        app::run(args)?;
+    }
+
+    Ok(())
 }

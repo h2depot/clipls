@@ -2,7 +2,7 @@ use std::{ffi::OsStr, path::PathBuf};
 
 use clap::{Parser, ValueEnum};
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum CopyMode {
     File,
     Text,
@@ -19,6 +19,11 @@ pub struct Args {
     /// Directory to browse.
     #[arg(default_value = ".", value_name = "PATH")]
     pub path: PathBuf,
+
+    /// Files to copy to clipboard.
+    #[arg(long = "fc", num_args = 1.., value_name = "FILES")]
+    pub fastclip: Option<Vec<PathBuf>>,
+
     /// Include files in subdirectories.
     #[arg(short, long)]
     pub recursive: bool,
