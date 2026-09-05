@@ -14,7 +14,7 @@
 ## ⚙️How to Use clipls
 
 ### Build with Windows
-Coming soon...
+Currently submitted to winget and awaiting approval. Installation via winget is coming soon.
 
 ### Install on Linux / macOS
 
@@ -60,7 +60,7 @@ Options can be combined, for example: `clipls -ra -m path ./src`.
 
 ## 🖥️ Supported OS
 
-- Windows (Download from winget command. Coming soon...)
+- Windows (winget submission pending approval; installation coming soon)
 - macOS (Intel / Apple Silicon; see installation command above)
 - Linux (x86_64 / ARM64; see installation command above)
 
