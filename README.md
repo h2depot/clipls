@@ -16,9 +16,24 @@
 ### Build with Windows
 Coming soon...
 
-### Build with MacOS/ Linux
+### Install on Linux / macOS
 
-Coming soon...
+Run the following command on Linux or macOS (requires `curl` and `tar`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/h2depot/clipls/main/install.sh -o install-clipls.sh && sh install-clipls.sh
+```
+
+The installer detects your OS and CPU architecture (x86_64 or ARM64), downloads the matching `.tar.gz` from the latest GitHub Release, and extracts `clipls` into `~/.local/bin`. A published release with the matching asset is required.
+
+Add the installation directory to your PATH for the current terminal session:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+clipls --version
+```
+
+To keep this PATH setting in new terminals, add the `export` line to `~/.bashrc` (Bash) or `~/.zshrc` (Zsh).
 
 ### command menu
 
@@ -46,8 +61,8 @@ Options can be combined, for example: `clipls -ra -m path ./src`.
 ## 🖥️ Supported OS
 
 - Windows (Download from winget command. Coming soon...)
-- MacOS (Comming Soon...)
-- Linux (Coming Soon...)
+- macOS (Intel / Apple Silicon; see installation command above)
+- Linux (x86_64 / ARM64; see installation command above)
 
 ## 💡 Questions & Suggestions
 

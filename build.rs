@@ -9,8 +9,8 @@ fn main() {
         .set("ProductName", "clipls")
         .set("InternalName", "clipls.exe")
         .set("OriginalFilename", "clipls.exe")
-        .set("CompanyName", "H2Depot")
-        .set("LegalCopyright", "Copyright (c) 2026 H2Depot");
+        .set("CompanyName", "h2depot")
+        .set("LegalCopyright", "Copyright (c) 2026 h2depot");
 
     resource
         .compile()
