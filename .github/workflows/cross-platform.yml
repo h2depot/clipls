@@ -26,6 +26,10 @@ jobs:
             target: x86_64-unknown-linux-gnu
             binary: clipls
             archive: clipls-linux-x86_64.tar.gz
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            binary: clipls
+            archive: clipls-linux-aarch64.tar.gz
           - os: macos-latest
             target: x86_64-apple-darwin
             binary: clipls
@@ -73,6 +77,14 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: ${{ matrix.archive }}
+
+      - name: Store standalone Windows binary
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-standalone
+          path: target/${{ matrix.target }}/release/clipls.exe
+          if-no-files-found: error
 
   release:
     name: Publish GitHub Release
