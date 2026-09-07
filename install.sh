@@ -54,5 +54,13 @@ chmod +x "${TMP_DIR}/${BIN_NAME}"
 mv -f "${TMP_DIR}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
 
 echo "Installed ${BIN_NAME} to ${INSTALL_DIR}/${BIN_NAME}"
-echo
-echo "Make sure ${INSTALL_DIR} is in your PATH."
+
+case ":${PATH-}:" in
+    *":${INSTALL_DIR}:"*)
+        ;;
+    *)
+        echo
+        echo "Warning: ${INSTALL_DIR} is not in your PATH."
+        echo 'Add this line to your shell configuration: export PATH="$HOME/.local/bin:$PATH"'
+        ;;
+esac
