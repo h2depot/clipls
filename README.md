@@ -14,7 +14,11 @@
 ## ⚙️How to Use clipls
 
 ### Build with Windows
-Currently submitted to winget and awaiting approval. Installation via winget is coming soon.
+Distributed via Windows Package Manager (winget)
+Run the following command on Windows Powershell !!
+```powershell
+winget install clipls
+```
 
 ### Install on Linux / macOS
 
